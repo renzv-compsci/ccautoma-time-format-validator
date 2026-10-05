@@ -1,46 +1,47 @@
 TRANSITIONS = {
-    "S0": {"0": "S1", "1": "S2", "2": "S3"},
-    "S1": {"0": "S4", "1": "S5", "2": "S5", "3": "S5", "4": "S5", "5": "S5", "6": "S5", "7": "S5", "8": "S5", "9": "S5"},
-    "S2": {"0": "S5", "1": "S5", "2": "S5", "3": "S4", "4": "S4", "5": "S4", "6": "S4", "7": "S4", "8": "S4", "9": "S4"},
-    "S3": {"0": "S4", "1": "S4", "2": "S4", "3": "S4"},
-    "S4": {":": "S6"},
-    "S5": {":": "S7"},
-    "S6": {"0": "S8", "1": "S8", "2": "S8", "3": "S8", "4": "S8", "5": "S8"},
-    "S7": {"0": "S9", "1": "S9", "2": "S9", "3": "S9", "4": "S9", "5": "S9"},
-    "S8": {"0": "S10", "1": "S10", "2": "S10", "3": "S10", "4": "S10", "5": "S10", "6": "S10", "7": "S10", "8": "S10", "9": "S10"},
-    "S9": {"0": "S11", "1": "S11", "2": "S11", "3": "S11", "4": "S11", "5": "S11", "6": "S11", "7": "S11", "8": "S11", "9": "S11"},
-    "S10": {},
-    "S11": {" ": "S12"},
-    "S12": {"A": "S13", "P": "S13"},
-    "S13": {"M": "S10"},
-    "dead": {}
+    "M0": {"0": "M1", "1": "M2", "2": "M3"},
+    "M1": {"0": "M4", "1": "M5", "2": "M5", "3": "M5", "4": "M5", "5": "M5", "6": "M5", "7": "M5", "8": "M5", "9": "M5"},
+    "M2": {"0": "M5", "1": "M5", "2": "M5", "3": "M4", "4": "M4", "5": "M4", "6": "M4", "7": "M4", "8": "M4", "9": "M4"},
+    "M3": {"0": "M4", "1": "M4", "2": "M4", "3": "M4"},
+    "M4": {":": "M6"},
+    "M5": {":": "M7"},
+    "M6": {"0": "M8", "1": "M8", "2": "M8", "3": "M8", "4": "M8", "5": "M8"},
+    "M7": {"0": "M9", "1": "M9", "2": "M9", "3": "M9", "4": "M9", "5": "M9"},
+    "M8": {"0": "M10", "1": "M10", "2": "M10", "3": "M10", "4": "M10", "5": "M10", "6": "M10", "7": "M10", "8": "M10", "9": "M10"},
+    "M9": {"0": "M11", "1": "M11", "2": "M11", "3": "M11", "4": "M11", "5": "M11", "6": "M11", "7": "M11", "8": "M11", "9": "M11"},
+    "M10": {},
+    "M11": {" ": "M12"},
+    "M12": {"A": "M13", "P": "M13"},
+    "M13": {"M": "M10"},
+    "M14": {}
 }
 
-ACCEPTING_STATES = {"S10", "S11"}
-DEAD_STATE = "dead"
-START_STATE = "S0"
+ACCEPTING_STATES = {"M10", "M11"}
+DEAD_STATE = "M14"
+START_STATE = "M0"
 
-def simulate(input_string: str) -> dict: 
+def simulate(input_string: str) -> dict:
     current_state = START_STATE
     trace = []
 
-    for index, char in enumerate(input_string): 
-        if current_state == DEAD_STATE: 
-            next_state = DEAD_STATE
-        else: 
-            next_state = TRANSITIONS.get(current_state, {}).get(char, DEAD_STATE)
+    for index, char in enumerate(input_string):
+        next_state = TRANSITIONS.get(current_state, {}).get(char, DEAD_STATE)
 
         trace.append({
-            "step": index, 
+            "step": index,
             "char": char if char != " " else "' '",
-            "from_state": current_state, 
+            "from_state": current_state,
             "to_state": next_state
         })
+
         current_state = next_state
 
-    is_accepted = current_state in ACCEPTING_STATES
+        # Dead-state optimization: stop reading on hard reject.
+        if current_state == DEAD_STATE:
+            break
+
     return {
-        "accepted": is_accepted, 
-        "final_state": current_state, 
-        "trace": trace 
+        "accepted": current_state in ACCEPTING_STATES,
+        "final_state": current_state,
+        "trace": trace
     }

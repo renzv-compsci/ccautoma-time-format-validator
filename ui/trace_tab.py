@@ -14,6 +14,11 @@ def _load_json(name):
         return json.load(f)
 
 
+def _extract_state_name(label):
+    """Helper to clean state labels for exact matching (removes '-> ' and '* ')."""
+    return label.replace("-> ", "").replace("* ", "").strip()
+
+
 def _table(spec):
     """Helper to build the dataframe table."""
     has_eps = "epsilon_transitions" in spec
@@ -78,16 +83,15 @@ def _generate_linear_trace_dot(trace, is_accepted, final_state):
 
 def _generate_highlighted_minimized_dfa(trace, is_accepted, final_state):
     """
-    Generates the FULL Minimized DFA diagram with high-contrast colors
-    for visibility in Light Mode.
+    Generates the FULL Minimized DFA diagram (M0-M14) with high-contrast colors.
     """
     spec = _load_json("minimized_dfa.json")
     lines = [
         "digraph MinimizedDFAExecution {",
         "    rankdir=LR;",
-        "    bgcolor=\"white\";", # Force white background
-        "    node [shape=circle, fontname=\"Helvetica\", style=filled, color=\"black\", fontcolor=\"black\", penwidth=2];", # Black borders
-        "    edge [fontname=\"Helvetica\", fontsize=10, color=\"black\"];" # Default black edges
+        "    bgcolor=\"white\";",
+        "    node [shape=circle, fontname=\"Helvetica\", style=filled, color=\"black\", fontcolor=\"black\", penwidth=2];",
+        "    edge [fontname=\"Helvetica\", fontsize=10, color=\"black\"];"
     ]
 
     visited_states = set()
@@ -101,7 +105,7 @@ def _generate_highlighted_minimized_dfa(trace, is_accepted, final_state):
         json_symbol = "SPACE" if trace_char == "' '" else trace_char
         active_edges.add((step["from_state"], step["to_state"], json_symbol))
 
-    # 2. Add Nodes
+    # Add Nodes
     for state in spec["states"]:
         shape = "circle"
         fillcolor = "#E0E0E0" # Light gray (visible on white)
@@ -118,13 +122,13 @@ def _generate_highlighted_minimized_dfa(trace, is_accepted, final_state):
                 fillcolor = "#FF6B6B" # Red
                 
         label = state
-        if state == "S10": label = "S10 (Merged)"
-        if state == "S13": label = "S13 (Merged)"
-        if state == "dead": label = "Dead"
+        if state == "M10": label = "M10 (S10+S15)"
+        if state == "M13": label = "M13 (S13+S14)"
+        if state == "M14": label = "M14 (Dead)"
 
         lines.append(f'    "{state}" [label="{label}", shape="{shape}", style="{style}", fillcolor="{fillcolor}"];')
 
-    # 3. Add Edges
+    # Add Edges
     for u, transitions in spec["transitions"].items():
         for symbol, v_list in transitions.items():
             for v in v_list:
@@ -139,11 +143,11 @@ def _generate_highlighted_minimized_dfa(trace, is_accepted, final_state):
                 label = "space" if symbol == "SPACE" else symbol
                 lines.append(f'    "{u}" -> "{v}" [label="{label}", color="{color}", penwidth="{penwidth}", style="{style}"];')
 
-    # 4. Dead State Loop
-    if "dead" in visited_states:
-        lines.append(f'    "dead" -> "dead" [label="all", color="#FF0000", penwidth="3.0", style="solid"];')
+    # Dead State Loop (M14)
+    if "M14" in visited_states:
+        lines.append(f'    "M14" -> "M14" [label="all", color="#FF0000", penwidth="3.0", style="solid"];')
     else:
-        lines.append(f'    "dead" -> "dead" [label="all", color="#555555", style="dashed"];')
+        lines.append(f'    "M14" -> "M14" [label="all", color="#555555", style="dashed"];')
 
     lines.append("}")
     return "\n".join(lines)
@@ -185,13 +189,13 @@ def render(report):
     if is_accepted:
         st.success(f"The automaton successfully reached accepting state {final_state}. The string is in L_TIME.")
     else:
-        if final_state == "dead":
-            st.error("The automaton transitioned to the dead state. The string violates the structural rules of L_TIME.")
+        if final_state == "M14":
+            st.error("The automaton transitioned to the dead state (M14). The string violates the structural rules of L_TIME.")
         else:
             st.warning(f"The automaton halted in non-accepting state {final_state}. The input was incomplete.")
 
     st.markdown("#### 3. Minimized DFA Execution View")
-    st.caption("The full 15-state Minimized DFA. The red/thick path shows your input's journey; gray/dashed lines are unused transitions.")
+    st.caption("The full 15-state Minimized DFA (M0-M14). The red/thick path shows your input's journey; gray/dashed lines are unused transitions.")
     
     highlighted_dot = _generate_highlighted_minimized_dfa(trace, is_accepted, final_state)
     if highlighted_dot:
@@ -205,5 +209,7 @@ def render(report):
     visited_states = list(dict.fromkeys(step["from_state"] for step in trace))
     full_spec = _load_json("minimized_dfa.json")
     full_df = _table(full_spec)
-    mask = full_df["State"].apply(lambda x: any(vs in x for vs in visited_states))
+    
+    # Exact match filtering to prevent "M1" from matching "* M10"
+    mask = full_df["State"].apply(lambda x: _extract_state_name(x) in visited_states)
     st.dataframe(full_df[mask], hide_index=True, use_container_width=True)

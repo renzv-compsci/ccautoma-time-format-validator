@@ -10,3 +10,4 @@ def normalize(raw_input: str) -> str:
         s = '0' + s
         
     return s
+

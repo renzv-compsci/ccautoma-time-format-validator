@@ -1,15 +1,15 @@
 from core import alphabet_check, normalizer, automaton
 
 STATE_EXPECTATION = {
-    "S0": "Hour must start with 0, 1, or 2.",
-    "S3": "Hour starting with 2 must end with 0-3 (20-23).",
-    "S4": "Colon ':' expected after the hour.",
-    "S5": "Colon ':' expected after the hour.",
-    "S6": "First minute digit must be 0-5.",
-    "S7": "First minute digit must be 0-5.",
-    "S11": "End of input (24-hour) or exactly one space before AM/PM.",
-    "S12": "Meridiem must start with 'A' or 'P'.",
-    "S13": "Meridiem must end with 'M'.",
+    "M0": "Hour must start with 0, 1, or 2.",
+    "M3": "Hour starting with 2 must end with 0-3 (20-23).",
+    "M4": "Colon ':' expected after the hour.",
+    "M5": "Colon ':' expected after the hour.",
+    "M6": "First minute digit must be 0-5.",
+    "M7": "First minute digit must be 0-5.",
+    "M11": "End of input (24-hour) or exactly one space before AM/PM.",
+    "M12": "Meridiem must start with 'A' or 'P'.",
+    "M13": "Meridiem must end with 'M'.",
 }
 
 def _check_and_simulate(text: str) -> dict: 

@@ -3,149 +3,113 @@
 ## 1. Overview
 
 This document defines the minimized DFA for L_TIME, obtained by applying
-partition refinement to the 17-state DFA in DFA_SPECIFICATION.md.
+Moore's partitioning algorithm to the 17-state DFA in DFA_SPECIFICATION.md,
+exactly as finalized in the revised DFA Minimization Report.
 
-The minimization merges exactly two pairs of equivalent states:
-
-- S15 into S10 (both accepting; every symbol goes to the dead state)
-- S14 into S13 (both non-accepting; M goes to the accepting state; all
-  other symbols go to the dead state)
-
-Result: 15 states (S0-S13 plus the dead state), 2 accepting states.
-
-This 15-state machine is the one the simulator implements in
-core/automaton.py, per the DFA Designer's handoff.
-
----
+Result: 17 states reduced to 15 states by merging the indistinguishable
+pairs (S10, S15) and (S13, S14). The minimized automaton recognizes the
+same language with reduced memory and simpler lookup logic.
 
 ## 2. Formal Definition
 
-The minimized DFA is the 5-tuple M = (Q, Σ, δ, S0, F):
+Mmin = (Qmin, Σ, δmin, M0, Fmin):
 
-- Q = {S0, S1, ..., S13, ∅} (15 states)
-- Σ = {0,1,2,3,4,5,6,7,8,9, :, ␣, A, M, P} (15 symbols; ␣ = one literal space)
-- δ : Q × Σ → Q (total function; missing entries go to ∅)
-- S0 = start state
-- F = {S10, S11} (accepting states)
+- Qmin = {M0, M1, ..., M14} (15 states)
+- Σ = {0,1,2,3,4,5,6,7,8,9, :, SPACE, A, M, P}
+- δmin : Qmin × Σ → Qmin (total; missing entries go to M14)
+- M0 = start state
+- Fmin = {M10, M11}
 
----
+## 3. State Mapping and Semantics
 
-## 3. Merge Map and State Meanings
-
-| New State | Old States | Meaning |
+| Minimized | Original (17-state) | Meaning |
 |---|---|---|
-| S0 | S0 | Start; nothing read |
-| S1 | S1 | First hour digit 0 |
-| S2 | S2 | First hour digit 1 |
-| S3 | S3 | First hour digit 2 (24-hour only) |
-| S4 | S4 | Hour complete; 24-hour only |
-| S5 | S5 | Hour complete; valid in both formats |
-| S6 | S6 | Colon read; 24-hour only |
-| S7 | S7 | Colon read; both formats |
-| S8 | S8 | Minute tens valid; 24-hour only |
-| S9 | S9 | Minute tens valid; both formats |
-| S10 | S10 + S15 | ACCEPTING: complete valid time (24-hour or 12-hour) |
-| S11 | S11 | ACCEPTING: complete 24-hour time that may continue as 12-hour |
-| S12 | S12 | Space read after 12-hour HH:MM; waiting for A or P |
-| S13 | S13 + S14 | Meridiem first letter read (A or P); waiting for M |
-| ∅ | ∅ | Dead state; trap |
+| M0 | S0 | Start; nothing read |
+| M1 | S1 | Hour starts with 0 |
+| M2 | S2 | Hour starts with 1 |
+| M3 | S3 | Hour starts with 2 (24-hour only) |
+| M4 | S4 | Hour valid only as 24-hour |
+| M5 | S5 | Hour valid in both formats |
+| M6 | S6 | 24-hour-only hour, colon read |
+| M7 | S7 | Shared hour, colon read |
+| M8 | S8 | Minute tens, 24-hour-only path |
+| M9 | S9 | Minute tens, shared path |
+| M10 | S10 + S15 | ACCEPTING: complete 24-hour or complete 12-hour time |
+| M11 | S11 | ACCEPTING: complete 24-hour time that may extend to 12-hour |
+| M12 | S12 | Space read after minutes |
+| M13 | S13 + S14 | A or P read; waiting for M |
+| M14 | ∅ | Dead (trap) state |
 
----
+## 4. Minimization Process (Moore's Algorithm)
 
-## 4. Proof of Minimization (Partition Refinement)
+Unreachable states: none (subset construction only creates reachable states).
 
-[PENDING: The Automata Optimizer's formal partition-refinement proof will
-be inserted here. The 15-state result below is locked and already in use by
-the simulator; only the written proof is pending.]
+Partition rounds (full derivation in the revised DFA Minimization Report):
 
-Template for the pending proof:
+- P0 (2 classes): accepting {S10, S11, S15} vs non-accepting rest.
+- P1 (4): {S8, S9} split (reach accepting on any digit); {S13, S14} split (reach accepting on M).
+- P2 (6): {S6, S7} split (go to {S8,S9} on 0-5); {S12} split (goes to {S13,S14} on A/P).
+- P3 (8): {S10, S15} separated from S11 (S11 goes to S12 on SPACE); {S4, S5} split.
+- P4 (11): {S1, S2} stay together; {S3}, {S8}, {S9} separate.
+- P5 (13): {S0} and {∅} separate; {S6}, {S7} separate.
+- P6 (14): {S4}, {S5} separate.
+- P7 (15): {S1}, {S2} separate.
+- P8: identical to P7; refinement stops.
 
-1. Initial partition P0 = { F, Q \ F } with F = {S10, S11, S15} (pre-merge
-   accepting set).
-2. Refinement steps showing which blocks split on which symbols.
-3. Indistinguishability arguments for the two merged pairs:
-   - S10 ≡ S15: both accepting; no continuation is accepted from either.
-   - S13 ≡ S14: both accept exactly the continuation "M" and nothing else.
-4. Distinguishing strings proving no further merges, for example:
-   - S11 vs S10: continuation "␣AM" accepts from S11, dies from S10.
-   - S13 vs S10: continuation "M" accepts from S13, dies from S10.
-   - S6 vs S7: continuation "00␣AM" accepts from S7, dies from S6.
-   - S12 vs ∅: continuation "AM" accepts from S12, dies from ∅.
+Final equivalence classes: all singletons except {S10, S15} and {S13, S14}.
 
----
+Indistinguishability confirmation:
+
+- S10 ≡ S15: both accepting; every symbol leads to ∅ from both.
+- S13 ≡ S14: both non-accepting; M leads to S15 from both; all other symbols lead to ∅.
 
 ## 5. Transition Table
 
-Legend: → start; * accepting; ∅ dead state. Missing entries go to ∅.
-Grouped columns apply separately to each digit in the range.
+Legend: → start; * accepting; M14 dead. Grouped columns apply per digit.
 
 | State | 0 | 1 | 2 | 3 | 4–5 | 6–9 | : | ␣ | A | P | M |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| → S0 | S1 | S2 | S3 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
-| S1 | S4 | S5 | S5 | S5 | S5 | S5 | ∅ | ∅ | ∅ | ∅ | ∅ |
-| S2 | S5 | S5 | S5 | S4 | S4 | S4 | ∅ | ∅ | ∅ | ∅ | ∅ |
-| S3 | S4 | S4 | S4 | S4 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
-| S4 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | S6 | ∅ | ∅ | ∅ | ∅ |
-| S5 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | S7 | ∅ | ∅ | ∅ | ∅ |
-| S6 | S8 | S8 | S8 | S8 | S8 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
-| S7 | S9 | S9 | S9 | S9 | S9 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
-| S8 | S10 | S10 | S10 | S10 | S10 | S10 | ∅ | ∅ | ∅ | ∅ | ∅ |
-| S9 | S11 | S11 | S11 | S11 | S11 | S11 | ∅ | ∅ | ∅ | ∅ | ∅ |
-| *S10 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
-| *S11 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | S12 | ∅ | ∅ | ∅ |
-| S12 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | S13 | S13 | ∅ |
-| S13 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | S10 |
-| ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
+| → M0 | M1 | M2 | M3 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
+| M1 | M4 | M5 | M5 | M5 | M5 | M5 | ∅ | ∅ | ∅ | ∅ | ∅ |
+| M2 | M5 | M5 | M5 | M4 | M4 | M4 | ∅ | ∅ | ∅ | ∅ | ∅ |
+| M3 | M4 | M4 | M4 | M4 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
+| M4 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | M6 | ∅ | ∅ | ∅ | ∅ |
+| M5 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | M7 | ∅ | ∅ | ∅ | ∅ |
+| M6 | M8 | M8 | M8 | M8 | M8 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
+| M7 | M9 | M9 | M9 | M9 | M9 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
+| M8 | M10 | M10 | M10 | M10 | M10 | M10 | ∅ | ∅ | ∅ | ∅ | ∅ |
+| M9 | M11 | M11 | M11 | M11 | M11 | M11 | ∅ | ∅ | ∅ | ∅ | ∅ |
+| *M10 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
+| *M11 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | M12 | ∅ | ∅ | ∅ |
+| M12 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | M13 | M13 | ∅ |
+| M13 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | M10 |
+| M14 | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ | ∅ |
 
----
+## 6. Example Traces
 
-## 6. Example Traces (Minimized States)
+- 23:45: M0 -2-> M3 -3-> M4 -:-> M6 -4-> M8 -5-> M10 (accept)
+- 09:30 AM: M0 -0-> M1 -9-> M5 -:-> M7 -3-> M9 -0-> M11 -␣-> M12 -A-> M13 -M-> M10 (accept)
+- 12:00: M0 -1-> M2 -2-> M5 -:-> M7 -0-> M9 -0-> M11 (accept)
+- 13:00 PM: ... -0-> M10 -␣-> M14 (dead; 24-hour time cannot take a meridiem)
+- 12:60: M7 -6-> M14 (minute tens must be 0-5)
+- 09:30AM: M11 -A-> M14 (missing required single space)
 
-### Accepted: 23:45
-S0 -2-> S3 -3-> S4 -:-> S6 -4-> S8 -5-> S10 (accept)
+## 7. Comparison and Improvement
 
-### Accepted: 09:30 AM
-S0 -0-> S1 -9-> S5 -:-> S7 -3-> S9 -0-> S11 -␣-> S12 -A-> S13 -M-> S10
-(accept; the old S15 endpoint is now the merged S10)
+- Original DFA: 17 states (16 + ∅). Minimized DFA: 15 states.
+- Improvement: two fewer states, simpler lookup logic, and a single unified
+  accepting state M10 for "complete time", which simplifies the simulator's
+  acceptance test to {M10, M11}.
 
-### Accepted: 12:00
-S0 -1-> S2 -2-> S5 -:-> S7 -0-> S9 -0-> S11 (accept)
+## 8. Implementation Notes (Implemented in core/automaton.py)
 
-### Rejected: 13:30 PM
-S0 -1-> S2 -3-> S4 -:-> S6 -3-> S8 -0-> S10 --> ∅ (dead)
+1. Alphabet validation runs before DFA execution (Layer 1).
+2. ' ' is mapped to SPACE before table lookup.
+3. Missing transitions go to M14.
+4. Dead-state optimization: the read loop breaks immediately upon entering M14.
+5. Accept only if the final state is M10 or M11.
 
-### Rejected: 12:60
-S0 -1-> S2 -2-> S5 -:-> S7 -6-> ∅ (minute tens must be 0-5)
+## 9. Machine-Readable and Diagram Files
 
-### Rejected: 09:30AM
-... -0-> S11 -A-> ∅ (missing required single space)
-
----
-
-## 7. Equivalence
-
-The minimized DFA accepts exactly the same language as the NFA, the regular
-expression, and the 17-state DFA: 2,880 strings (1,440 from L24 and 1,440
-from L12). Minimization changes the number of states, never the language.
-
----
-
-## 8. Machine-Readable and Diagram Files
-
-- `data/minimized_dfa.json`: structured transition table used by
-  core/automaton.py. Missing transitions default to the dead state. The
-  symbol key "SPACE" represents one literal space character.
-- `diagrams/minimized_dfa.dot`: Graphviz source, horizontal orientation
-  (rankdir=LR). Merged states are labeled with their original names.
-
----
-
-## 9. Handoff to Programmer
-
-Implement this exact table in core/automaton.py:
-
-1. Run the Alphabet Check first (reject symbols outside Σ_TIME).
-2. Map ' ' to "SPACE" before table lookup.
-3. Treat missing transitions as moves to the dead state.
-4. Accept only if the final state after the full input is S10 or S11.
-5. Record every transition for the Trace Tab.
+- data/minimized_dfa.json: M-named table consumed by core/automaton.py.
+- diagrams/minimized_dfa.dot: horizontal diagram with merged-state labels.
