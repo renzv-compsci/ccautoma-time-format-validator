@@ -8,6 +8,7 @@ from ui import (
     automata_tab,
     formal_language_tab,
     layout,
+    simulation_tab,
     summary_tab,
     test_cases_tab,
     trace_tab,
@@ -35,8 +36,8 @@ if btn_cols[-1].button("Validate", type="primary", key="validate_btn"):
 
 report = st.session_state.get("report")
 
-tab_summary, tab_lang, tab_automata, tab_trace, tab_tests = st.tabs(
-    ["Summary", "Formal Language", "Automata", "Trace", "Test Cases"]
+tab_summary, tab_lang, tab_automata, tab_sim, tab_trace, tab_tests = st.tabs(
+    ["Summary", "Formal Language", "Automata", "Simulation", "Trace", "Test Cases"]
 )
 
 with tab_summary:
@@ -59,3 +60,8 @@ with tab_trace:
 
 with tab_tests:
     test_cases_tab.render()
+
+# Rendered last: its Play animation sleeps between frames, which would
+# otherwise delay every tab drawn after it.
+with tab_sim:
+    simulation_tab.render()
