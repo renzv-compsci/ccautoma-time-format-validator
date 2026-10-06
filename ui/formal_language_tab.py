@@ -1,11 +1,9 @@
 """Formal Language tab: LaTeX-rendered formal specification.
 
 Mirrors Sections 3-7 of the revised Formal Language Analysis, plus the
-user-input layer language (L_USER) with its own alphabet and component
-sets defined over the normalized input, member strings shown as ordered
-symbol sequences, and the mathematical regular expressions (R_TIME for
-the formal layer and R_USER as the system-layer raw-input view), so the
-GUI notation matches the team papers exactly.
+mathematical regular expressions (R_TIME for the formal layer and R_USER
+as the system-layer raw-input view), so the GUI notation matches the
+team papers exactly.
 """
 
 import pandas as pd
@@ -107,71 +105,9 @@ def render():
     )
 
     # ---------------------------------------------------------
-    # 8. User-input layer language (L_USER)
+    # 8. Mathematical regular expressions
     # ---------------------------------------------------------
-    st.markdown("### 8. User-Input Layer Language (L_USER)")
-    st.markdown(
-        "The two-layer architecture keeps the formal layer mathematically pure: "
-        "casual typing habits are resolved by the system layer before the "
-        "automaton runs, so the formal layer only ever reads canonical strings "
-        "such as `09:30 AM`. To make the user layer a self-contained formal "
-        "object, this section gives it its own alphabet and component sets, "
-        "defined over the normalized user input."
-    )
-    st.latex(r"\Sigma_{\text{USER}} = \{0,1,2,3,4,5,6,7,8,9,\;\; :\;\; \text{' '},\;\; A,\;\; M,\; P\,\}")
-    st.latex(r"|\Sigma_{\text{USER}}| = 15")
-    st.latex(r"D_{U} = \{0,1,2,3,4,5,6,7,8,9\}")
-    st.latex(r"\text{MIN}_{U} = \{00, 01, 02, \dots, 58, 59\}")
-    st.latex(r"H_{24}^{U} = \{00, 01, 02, \dots, 22, 23\}")
-    st.latex(r"H_{12}^{U} = \{01, 02, 03, \dots, 11, 12\}")
-    st.latex(r"\text{MER}_{U} = \{\text{AM}, \text{PM}\}")
-    st.latex(r"L_{\text{USER},24} = \{\, h\,:\,m \;\mid\; h \in H_{24}^{U},\; m \in \text{MIN}_{U} \,\}")
-    st.latex(r"L_{\text{USER},12} = \{\, h\,:\,m\;\text{' '}\;x \;\mid\; h \in H_{12}^{U},\; m \in \text{MIN}_{U},\; x \in \text{MER}_{U} \,\}")
-    st.latex(r"L_{\text{USER}} = L_{\text{USER},24} \cup L_{\text{USER},12}")
-    st.latex(r"L_{\text{USER}} \equiv L_{\text{TIME}}")
-    st.caption(
-        "Because the system layer supplies only canonical strings, every user-layer "
-        "component coincides with its general counterpart (Sigma_USER = Sigma_TIME, "
-        "H24^U = H24, H12^U = H12, MIN_U = MIN, MER_U = MER). The parallel "
-        "specification makes explicit what the normalized user input is as a formal "
-        "object, and yields L_USER equivalent to L_TIME."
-    )
-
-    st.markdown(
-        "A member of L_USER is an ordered sequence of symbols taken from "
-        "Sigma_USER, not a set of symbols. For the normalized input 09:30 AM:"
-    )
-    st.latex(r"09:30\;\text{AM} \;=\; 0 \cdot 9 \cdot : \cdot 3 \cdot 0 \cdot \text{' '} \cdot A \cdot M \;\in\; L_{\text{USER},12}")
-    st.latex(r"23:59 \;=\; 2 \cdot 3 \cdot : \cdot 5 \cdot 9 \;\in\; L_{\text{USER},24}")
-    st.caption(
-        "The collection {0, 9, :, 3, 0, ' ', A, M} is the symbol set of the single "
-        "member 09:30 AM. The alphabet of the layer is the union of the symbols of "
-        "all members, which is why Sigma_USER contains all ten digits, the colon, "
-        "the space, and the letters A, M, and P."
-    )
-
-    user_examples = pd.DataFrame(
-        [
-            ["9:30 am", "09:30 AM", "L_USER,12", "ACCEPTED"],
-            ["1:05 PM", "01:05 PM", "L_USER,12", "ACCEPTED"],
-            ["0:30", "00:30", "L_USER,24", "ACCEPTED"],
-            ["12:49 AM", "12:49 AM", "L_USER,12", "ACCEPTED"],
-            ["0:30 am", "00:30 AM", "neither", "REJECTED"],
-            ["24:00", "24:00", "neither", "REJECTED"],
-        ],
-        columns=["User input (system layer)", "Canonical form (formal layer)", "Branch", "Result"],
-    )
-    st.dataframe(user_examples, hide_index=True, use_container_width=True)
-    st.caption(
-        "The formal layer never sees the casual text; it evaluates only the canonical "
-        "column. For example, 0:30 am is rejected because its canonical form 00:30 AM "
-        "belongs to neither branch."
-    )
-
-    # ---------------------------------------------------------
-    # 9. Mathematical regular expressions
-    # ---------------------------------------------------------
-    st.markdown("### 9. Mathematical Regular Expressions")
+    st.markdown("### 8. Mathematical Regular Expressions")
     st.markdown(
         "The programming regex of Section 7 is a direct encoding of the following "
         "theoretical expressions, written with concatenation and the union "
