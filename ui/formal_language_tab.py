@@ -94,25 +94,13 @@ def render():
     st.dataframe(boundary, hide_index=True, use_container_width=True)
 
     # ---------------------------------------------------------
-    # 7. Programming regex and examples
+    # 7. Mathematical regular expressions
     # ---------------------------------------------------------
-    st.markdown("### 7. Programming Regex (implementation reference)")
-    st.code(r"^((([01][0-9]|2[0-3]):[0-5][0-9])|((0[1-9]|1[0-2]):[0-5][0-9] (AM|PM)))$")
-
+    st.markdown("### 7. Mathematical Regular Expressions")
     st.markdown(
-        "**Accepted examples:** `00:00`, `12:49`, `23:59`, `01:05 AM`, `12:00 PM`  \n"
-        "**Rejected examples:** `24:00`, `12:60`, `13:00 PM`, `00:30 AM`, `09:30AM`, `ab:cd`"
-    )
-
-    # ---------------------------------------------------------
-    # 8. Mathematical regular expressions
-    # ---------------------------------------------------------
-    st.markdown("### 8. Mathematical Regular Expressions")
-    st.markdown(
-        "The programming regex of Section 7 is a direct encoding of the following "
-        "theoretical expressions, written with concatenation and the union "
-        "operation +. R_TIME is the expression of the formal layer and is "
-        "evaluated on the canonical form of the user's input."
+        "The following theoretical expressions are written with concatenation "
+        "and the union operation +. R_TIME is the expression of the formal "
+        "layer and is evaluated on the canonical form of the user's input."
     )
     st.latex(r"D = (0+1+2+3+4+5+6+7+8+9)")
     st.latex(r"R_{24} = ((0+1)D + 2(0+1+2+3))\,:\,(0+1+2+3+4+5)D")
@@ -149,8 +137,8 @@ def render():
     st.table(legend)
     st.caption(
         "A raw string described by R_USER is accepted by the system because its "
-        "canonical form matches R_TIME. The programming regex remains the "
-        "implementation reference for R_TIME and is retained unchanged for the code."
+        "canonical form matches R_TIME. The programming regex implemented in the "
+        "code is a direct encoding of R_TIME."
     )
 
     st.caption("Full details: docs/FORMAL_SPECIFICATION.md")
